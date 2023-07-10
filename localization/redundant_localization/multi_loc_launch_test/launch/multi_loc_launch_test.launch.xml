@@ -1,0 +1,9 @@
+<launch>
+  <arg name="node_name" default="multi_loc_launch_tester"/>
+  <!-- arg name="localization_modules" default="[&quot;foo&quot;, &quot;bar&quot;, &quot;baz&quot;]" -->
+  <arg name="localization_modules" default="[&quot;yamaloc&quot;, &quot;yabloc&quot;, &quot;eagleye&quot;]"/>
+
+  <node pkg="multi_loc_launch_test" exec="multi_loc_launch_tester" name="$(var node_name)" output="log">
+    <param name="localization_modules" value="value1, value2, value3" value-sep=", "/>
+  </node>
+</launch>
