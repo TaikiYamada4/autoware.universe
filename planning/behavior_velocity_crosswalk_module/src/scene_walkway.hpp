@@ -30,6 +30,7 @@
 #include <lanelet2_routing/RoutingGraphContainer.h>
 
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -55,10 +56,11 @@ public:
   motion_utils::VirtualWalls createVirtualWalls() override;
 
 private:
-  int64_t module_id_;
+  const int64_t module_id_;
 
-  [[nodiscard]] boost::optional<std::pair<double, geometry_msgs::msg::Point>> getStopLine(
-    const PathWithLaneId & ego_path, bool & exist_stopline_in_map) const;
+  [[nodiscard]] std::optional<std::pair<double, geometry_msgs::msg::Point>> getStopLine(
+    const PathWithLaneId & ego_path, bool & exist_stopline_in_map,
+    const std::vector<geometry_msgs::msg::Point> & path_intersects) const;
 
   enum class State { APPROACH, STOP, SURPASSED };
 
@@ -66,19 +68,17 @@ private:
 
   lanelet::ConstLineStrings3d stop_lines_;
 
-  std::vector<geometry_msgs::msg::Point> path_intersects_;
-
   // State machine
   State state_;
 
   // Parameter
-  PlannerParam planner_param_;
+  const PlannerParam planner_param_;
 
   // Debug
   DebugData debug_data_;
 
   // flag to use regulatory element
-  bool use_regulatory_element_;
+  const bool use_regulatory_element_;
 };
 }  // namespace behavior_velocity_planner
 

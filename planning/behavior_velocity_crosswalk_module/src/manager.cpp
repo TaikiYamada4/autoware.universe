@@ -119,6 +119,8 @@ CrosswalkModuleManager::CrosswalkModuleManager(rclcpp::Node & node)
   cp.ego_pass_later_margin = node.declare_parameter<double>(ns + ".ego_pass_later_margin");
   cp.stop_object_velocity = node.declare_parameter<double>(ns + ".stop_object_velocity_threshold");
   cp.min_object_velocity = node.declare_parameter<double>(ns + ".min_object_velocity");
+  cp.disable_stop_for_yield_cancel =
+    node.declare_parameter<bool>(ns + ".disable_stop_for_yield_cancel");
   cp.max_yield_timeout = node.declare_parameter<double>(ns + ".max_yield_timeout");
   cp.ego_yield_query_stop_duration =
     node.declare_parameter<double>(ns + ".ego_yield_query_stop_duration");
@@ -141,7 +143,7 @@ void CrosswalkModuleManager::launchNewModules(const PathWithLaneId & path)
     opt_use_regulatory_element_ = checkRegulatoryElementExistence(rh->getLaneletMapPtr());
     std::ostringstream string_stream;
     string_stream << "use crosswalk regulatory element: ";
-    string_stream << std::boolalpha << opt_use_regulatory_element_.get();
+    string_stream << std::boolalpha << *opt_use_regulatory_element_;
     RCLCPP_INFO_STREAM(logger_, string_stream.str());
   }
 
@@ -155,12 +157,12 @@ void CrosswalkModuleManager::launchNewModules(const PathWithLaneId & path)
     const auto lanelet_map_ptr = planner_data_->route_handler_->getLaneletMapPtr();
 
     registerModule(std::make_shared<CrosswalkModule>(
-      id, lanelet_map_ptr, p, opt_use_regulatory_element_.get(), logger, clock_));
+      id, lanelet_map_ptr, p, *opt_use_regulatory_element_, logger, clock_));
     generateUUID(id);
     updateRTCStatus(getUUID(id), true, std::numeric_limits<double>::lowest(), path.header.stamp);
   };
 
-  if (opt_use_regulatory_element_.get()) {
+  if (*opt_use_regulatory_element_) {
     const auto crosswalk_leg_elem_map = planning_utils::getRegElemMapOnPath<Crosswalk>(
       path, rh->getLaneletMapPtr(), planner_data_->current_odometry->pose);
 
@@ -185,7 +187,7 @@ CrosswalkModuleManager::getModuleExpiredFunction(const PathWithLaneId & path)
 
   std::set<int64_t> crosswalk_id_set;
 
-  if (opt_use_regulatory_element_.get()) {
+  if (*opt_use_regulatory_element_) {
     const auto crosswalk_leg_elem_map = planning_utils::getRegElemMapOnPath<Crosswalk>(
       path, rh->getLaneletMapPtr(), planner_data_->current_odometry->pose);
 
@@ -237,10 +239,10 @@ void WalkwayModuleManager::launchNewModules(const PathWithLaneId & path)
     const auto lanelet_map_ptr = planner_data_->route_handler_->getLaneletMapPtr();
 
     registerModule(std::make_shared<WalkwayModule>(
-      lanelet.id(), lanelet_map_ptr, p, opt_use_regulatory_element_.get(), logger, clock_));
+      lanelet.id(), lanelet_map_ptr, p, *opt_use_regulatory_element_, logger, clock_));
   };
 
-  if (opt_use_regulatory_element_.get()) {
+  if (*opt_use_regulatory_element_) {
     const auto crosswalk_leg_elem_map = planning_utils::getRegElemMapOnPath<Crosswalk>(
       path, rh->getLaneletMapPtr(), planner_data_->current_odometry->pose);
 
@@ -265,7 +267,7 @@ WalkwayModuleManager::getModuleExpiredFunction(const PathWithLaneId & path)
 
   std::set<int64_t> walkway_id_set;
 
-  if (opt_use_regulatory_element_.get()) {
+  if (*opt_use_regulatory_element_) {
     const auto crosswalk_leg_elem_map = planning_utils::getRegElemMapOnPath<Crosswalk>(
       path, rh->getLaneletMapPtr(), planner_data_->current_odometry->pose);
 
