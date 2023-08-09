@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="pointcloud_switcher" exec="pointcloud_switcher" name="pointcloud_switcher" output="log">
+    <param from="$(find-pkg-share pointcloud_switcher)/config/pointcloud_switcher.param.yaml"/>
+  </node>
+
+</launch>
