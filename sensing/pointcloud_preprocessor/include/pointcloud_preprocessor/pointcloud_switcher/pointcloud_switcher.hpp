@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef POINTCLOUD_SWITCHER__POINTCLOUD_SWITCHER_HPP_
-#define POINTCLOUD_SWITCHER__POINTCLOUD_SWITCHER_HPP_ 
+#ifndef POINTCLOUD_PREPROCESSOR__POINTCLOUD_SWITCHER__POINTCLOUD_SWITCHER_HPP_
+#define POINTCLOUD_PREPROCESSOR__POINTCLOUD_SWITCHER__POINTCLOUD_SWITCHER_HPP_
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -23,6 +23,8 @@
 
 using namespace std;
 
+namespace pointcloud_preprocessor
+{
 class PointCloudSwitcher : public rclcpp::Node
 {
   public:
@@ -35,5 +37,6 @@ class PointCloudSwitcher : public rclcpp::Node
     vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> subscribers_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr selected_pointcloud_publisher_;
 };
+}  // namespace pointcloud_preprocessor
 
 #endif  // POINTCLOUD_SWITCHER__POINTCLOUD_SWITCHER_HPP_

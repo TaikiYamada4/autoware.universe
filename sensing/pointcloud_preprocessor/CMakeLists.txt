@@ -78,6 +78,7 @@ ament_auto_add_library(pointcloud_preprocessor_filter SHARED
   src/blockage_diag/blockage_diag_nodelet.cpp
   src/polygon_remover/polygon_remover.cpp
   src/vector_map_filter/vector_map_inside_area_filter.cpp
+  src/pointcloud_switcher/pointcloud_switcher.cpp
 )
 
 target_link_libraries(pointcloud_preprocessor_filter
@@ -187,6 +188,12 @@ target_link_libraries(polygon_remover_node gmp CGAL CGAL::CGAL CGAL::CGAL_Core)
 rclcpp_components_register_node(pointcloud_preprocessor_filter
   PLUGIN "pointcloud_preprocessor::VectorMapInsideAreaFilterComponent"
   EXECUTABLE vector_map_inside_area_filter_node)
+
+# ========== Pointcloud Switcher ===========
+rclcpp_components_register_node(pointcloud_preprocessor_filter
+  PLUGIN "pointcloud_preprocessor::PointCloudSwitcher"
+  EXECUTABLE pointcloud_switcher_node)
+
 
 install(
   TARGETS pointcloud_preprocessor_filter_base EXPORT export_${PROJECT_NAME}

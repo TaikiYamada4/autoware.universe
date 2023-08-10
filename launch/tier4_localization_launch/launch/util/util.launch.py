@@ -28,7 +28,15 @@ def launch_setup(context, *args, **kwargs):
     def load_composable_node_param(param_path):
         with open(LaunchConfiguration(param_path).perform(context), "r") as f:
             return yaml.safe_load(f)["/**"]["ros__parameters"]
+        
+    enable_pointcloud_switch = LaunchConfiguration('enable_pointcloud_switch')
 
+    pointcloud_switcher_component = ComposableNode(
+        package="pointcloud_preprocessor",
+        plugin="pointcloud_preprocessor::PointCloudSwitcher",
+        name="pointcloud_switcher",
+        parameters=[load_composable_node_param("pointcloud_switcher_param_path")]
+    )
     crop_box_component = ComposableNode(
         package="pointcloud_preprocessor",
         plugin="pointcloud_preprocessor::CropBoxFilterComponent",
@@ -66,6 +74,11 @@ def launch_setup(context, *args, **kwargs):
     )
 
     composable_nodes = [
+        pointcloud_switcher_component,
+        crop_box_component,
+        voxel_grid_downsample_component,
+        random_downsample_component,
+    ] if enable_pointcloud_switch == 'true' else [
         crop_box_component,
         voxel_grid_downsample_component,
         random_downsample_component,

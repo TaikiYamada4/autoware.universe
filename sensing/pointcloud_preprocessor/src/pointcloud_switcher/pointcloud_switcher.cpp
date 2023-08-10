@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <pointcloud_switcher/pointcloud_switcher.hpp>
+#include "pointcloud_preprocessor/pointcloud_switcher/pointcloud_switcher.hpp"
 
+namespace pointcloud_preprocessor
+{
 PointCloudSwitcher::PointCloudSwitcher() : rclcpp::Node("pointcloud_switcher")
 {
   // Get paramters from yaml file
@@ -49,12 +51,7 @@ void PointCloudSwitcher::pointcloud_callback(const sensor_msgs::msg::PointCloud2
     return;
   }
 }
+}  // namespace pointcloud_preprocessor
 
-int main(int argc, char **argv)
-{
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<PointCloudSwitcher>();
-  rclcpp::spin(node);
-  rclcpp::shutdown();
-  return 0;
-}
+#include <rclcpp_components/register_node_macro.hpp>
+RCLCPP_COMPONENTS_REGISTER_NODE(pointcloud_preprocessor::PointCloudSwitcher)
