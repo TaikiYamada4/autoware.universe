@@ -16,6 +16,7 @@
 #define POINTCLOUD_SWITCHER__POINTCLOUD_SWITCHER_HPP_ 
 
 #include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 
 #include <string>
 #include <vector>
@@ -28,7 +29,10 @@ class PointCloudSwitcher : public rclcpp::Node
     PointCloudSwitcher();
 
   private:
+    void pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg, const string topic_name);
     vector<string> pointcloud_candidates_;
+    vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> subscribers_;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr selected_pointcloud_publisher_;
 };
 
 #endif  // POINTCLOUD_SWITCHER__POINTCLOUD_SWITCHER_HPP_

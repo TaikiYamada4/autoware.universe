@@ -16,15 +16,29 @@
 
 PointCloudSwitcher::PointCloudSwitcher() : rclcpp::Node("pointcloud_switcher")
 {
+  // Get paramters from yaml file
   this->declare_parameter<vector<string>>("pointcloud_topic_name", vector<string>());
   this->get_parameter("pointcloud_topic_name", pointcloud_candidates_);
 
-  RCLCPP_INFO(this->get_logger(), "pointcloud_topic_name size: %d", pointcloud_candidates_.size());
-
-  for(auto topic_name : pointcloud_candidates_)
+  // Check pointcloud_topic_names and create subscribers for each topic
+  RCLCPP_INFO(this->get_logger(), "pointcloud_topic_name size: %ld", pointcloud_candidates_.size());
+  for(const auto &topic_name : pointcloud_candidates_)
   {
     RCLCPP_INFO(this->get_logger(), "pointcloud_topic_name: %s", topic_name.c_str());
+    auto callback = [this, topic_name](const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg) {
+      this->pointcloud_callback(pointcloud_msg, topic_name);
+    };
+    subscribers_.push_back(this->create_subscription<sensor_msgs::msg::PointCloud2>(topic_name, 10, callback));
   }
+
+  // Create publisher of /selected/pointcloud
+  selected_pointcloud_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/selected/pointcloud", 10);
+}
+
+void PointCloudSwitcher::pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg, const string topic_name)
+{
+  RCLCPP_INFO(this->get_logger(), "pointcloud_callback: %s", topic_name.c_str());
+  selected_pointcloud_publisher_->publish(*pointcloud_msg);
 }
 
 int main(int argc, char **argv)
@@ -32,5 +46,6 @@ int main(int argc, char **argv)
   rclcpp::init(argc, argv);
   auto node = std::make_shared<PointCloudSwitcher>();
   rclcpp::spin(node);
+  rclcpp::shutdown();
   return 0;
 }
