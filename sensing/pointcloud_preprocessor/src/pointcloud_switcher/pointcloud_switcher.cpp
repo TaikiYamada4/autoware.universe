@@ -16,8 +16,16 @@
 
 namespace pointcloud_preprocessor
 {
-PointCloudSwitcher::PointCloudSwitcher() : rclcpp::Node("pointcloud_switcher")
+PointCloudSwitcher::PointCloudSwitcher(const rclcpp::NodeOptions & options)
+: rclcpp::Node("pointcloud_switcher", options)
 {
+  // Set logger level to DEBUG
+  auto logger = this->get_logger();
+  rcutils_ret_t ret = rcutils_logging_set_logger_level(logger.get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
+  if (ret != RCUTILS_RET_OK) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to set logger level");
+  }
+
   // Get paramters from yaml file
   this->declare_parameter<vector<string>>("pointcloud_topic_name", vector<string>());
   this->get_parameter("pointcloud_topic_name", pointcloud_candidates_);
@@ -33,7 +41,16 @@ PointCloudSwitcher::PointCloudSwitcher() : rclcpp::Node("pointcloud_switcher")
       this->pointcloud_callback(pointcloud_msg, topic_name);
     };
     subscribers_.push_back(this->create_subscription<sensor_msgs::msg::PointCloud2>(topic_name, qos, callback));
+
+    // Set last_received_time_
+    last_received_time_[topic_name] = this->now();
   }
+
+  // Create a timer to check heartbeat
+  timer_ = this->create_wall_timer(
+    std::chrono::milliseconds(1000),
+    std::bind(&PointCloudSwitcher::check_heartbeat, this)
+  );
 
   // Set selected_pointcloud_topic_name_ to the first element of pointcloud_candidates_
   selected_pointcloud_topic_name_ = pointcloud_candidates_[0];
@@ -44,11 +61,37 @@ PointCloudSwitcher::PointCloudSwitcher() : rclcpp::Node("pointcloud_switcher")
 
 void PointCloudSwitcher::pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg, const string topic_name)
 {
-  RCLCPP_DEBUG(this->get_logger(), "pointcloud_callback: %s", topic_name.c_str());
+  // Calculate delta time and update last_received_time_
+  rclcpp::Time current_time = this->now();
+  double delta_time = (current_time - last_received_time_[topic_name]).seconds();
+  
+  if (delta_times_[topic_name].size() >= N) {
+    delta_times_[topic_name].erase(delta_times_[topic_name].begin());
+  }
+  delta_times_[topic_name].push_back(delta_time);
+
+  last_received_time_[topic_name] = current_time;
+
+  // Check if topic_name is equal to selected_pointcloud_topic_name_, if so, publish pointcloud_msg to /selected/pointcloud
   if(topic_name == selected_pointcloud_topic_name_)
   {
     selected_pointcloud_publisher_->publish(*pointcloud_msg);
     return;
+  }
+}
+
+void PointCloudSwitcher::check_heartbeat()
+{
+  // Check delta time average
+  for(const auto &topic_name : pointcloud_candidates_)
+  {
+    double delta_time_sum = 0;
+    for (const auto &delta_time : delta_times_[topic_name]) {
+      delta_time_sum += delta_time;
+    }
+    double delta_time_average = delta_time_sum / delta_times_[topic_name].size();
+
+    RCLCPP_DEBUG(this->get_logger(), "delta_time_average of %s: %f", topic_name.c_str(), delta_time_average);
   }
 }
 }  // namespace pointcloud_preprocessor

@@ -29,13 +29,14 @@ def launch_setup(context, *args, **kwargs):
         with open(LaunchConfiguration(param_path).perform(context), "r") as f:
             return yaml.safe_load(f)["/**"]["ros__parameters"]
         
-    enable_pointcloud_switch = LaunchConfiguration('enable_pointcloud_switch')
+    enable_pointcloud_switch = LaunchConfiguration('enable_pointcloud_switch').perform(context)
 
     pointcloud_switcher_component = ComposableNode(
         package="pointcloud_preprocessor",
         plugin="pointcloud_preprocessor::PointCloudSwitcher",
         name="pointcloud_switcher",
-        parameters=[load_composable_node_param("pointcloud_switcher_param_path")]
+        parameters=[load_composable_node_param("pointcloud_switcher_param_path")],
+        extra_arguments=[{"use_intra_process_comms": LaunchConfiguration("use_intra_process")}],
     )
     crop_box_component = ComposableNode(
         package="pointcloud_preprocessor",
@@ -126,6 +127,13 @@ def generate_launch_description():
             LaunchConfiguration("random_downsample_filter_param_path"),
         ],
         "path to the parameter file of random_downsample_filter",
+    )
+    add_launch_arg(
+        "pointcloud_switcher_param_path",
+        [
+            LaunchConfiguration("pointcloud_switcher_param_path"),
+        ],
+        "path to the parameter file of pointcloud_switcher",
     )
     add_launch_arg("use_intra_process", "true", "use ROS 2 component container communication")
     add_launch_arg("use_pointcloud_container", "True", "use pointcloud container")

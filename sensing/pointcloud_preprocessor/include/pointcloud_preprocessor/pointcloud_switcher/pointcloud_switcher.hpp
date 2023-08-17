@@ -28,14 +28,22 @@ namespace pointcloud_preprocessor
 class PointCloudSwitcher : public rclcpp::Node
 {
   public:
-    PointCloudSwitcher();
+    PointCloudSwitcher(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   private:
     void pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg, const string topic_name);
+    void check_heartbeat();
+    
     vector<string> pointcloud_candidates_;
     string selected_pointcloud_topic_name_;
     vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> subscribers_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr selected_pointcloud_publisher_;
+
+    map<string, rclcpp::Time> last_received_time_; // map of topic_name and last received time
+    map<string, vector<double>> delta_times_; // map of topic_name and a vector of delta times
+    const size_t N = 5; // Number of delta times to be stored
+
+    rclcpp::TimerBase::SharedPtr timer_;
 };
 }  // namespace pointcloud_preprocessor
 
