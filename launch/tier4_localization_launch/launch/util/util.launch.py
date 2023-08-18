@@ -30,11 +30,16 @@ def launch_setup(context, *args, **kwargs):
             return yaml.safe_load(f)["/**"]["ros__parameters"]
         
     enable_pointcloud_switch = LaunchConfiguration('enable_pointcloud_switch').perform(context)
+    
+    crop_box_input = "selected/pointcloud" if enable_pointcloud_switch == 'true' else LaunchConfiguration("input/pointcloud") 
 
     pointcloud_switcher_component = ComposableNode(
         package="pointcloud_preprocessor",
         plugin="pointcloud_preprocessor::PointCloudSwitcher",
         name="pointcloud_switcher",
+        remappings=[
+            ("output/pointcloud", "selected/pointcloud"),
+        ],
         parameters=[load_composable_node_param("pointcloud_switcher_param_path")],
         extra_arguments=[{"use_intra_process_comms": LaunchConfiguration("use_intra_process")}],
     )
@@ -43,7 +48,11 @@ def launch_setup(context, *args, **kwargs):
         plugin="pointcloud_preprocessor::CropBoxFilterComponent",
         name="crop_box_filter_measurement_range",
         remappings=[
+<<<<<<< HEAD
             ("input", LaunchConfiguration("input_pointcloud")),
+=======
+            ("input", crop_box_input),
+>>>>>>> 353b541e80 (Enable to switch between using pointcloud switcher or not.)
             ("output", "measurement_range/pointcloud"),
         ],
         parameters=[

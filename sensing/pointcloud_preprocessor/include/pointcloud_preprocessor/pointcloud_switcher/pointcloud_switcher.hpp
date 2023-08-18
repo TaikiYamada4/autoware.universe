@@ -35,13 +35,16 @@ class PointCloudSwitcher : public rclcpp::Node
     void check_heartbeat();
     
     vector<string> pointcloud_candidates_;
+    map<string, int> pointcloud_priority_;
     string selected_pointcloud_topic_name_;
-    vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> subscribers_;
+    vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> pointcloud_subscribers_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr selected_pointcloud_publisher_;
 
     map<string, rclcpp::Time> last_received_time_; // map of topic_name and last received time
     map<string, vector<double>> delta_times_; // map of topic_name and a vector of delta times
-    const size_t N = 5; // Number of delta times to be stored
+    map<string, double> delta_time_average_; // map of topic_name and delta time average
+    size_t steps_for_moving_average; // Number of delta time to be stored
+    int heartbeat_confimation_time_span; // in [ms]
 
     rclcpp::TimerBase::SharedPtr timer_;
 };
