@@ -44,7 +44,8 @@ class PointCloudSwitcher : public rclcpp::Node
     map<string, vector<double>> delta_times_; // map of topic_name and a vector of delta times
     map<string, double> delta_time_average_; // map of topic_name and delta time average
     size_t steps_for_moving_average; // Number of delta time to be stored
-    int heartbeat_confimation_time_span; // in [ms]
+    double heartbeat_confimation_time_span; // in [s]
+    double delta_time_average_threshold_; // in [s]
 
     rclcpp::TimerBase::SharedPtr timer_;
 };

@@ -28,12 +28,14 @@ PointCloudSwitcher::PointCloudSwitcher(const rclcpp::NodeOptions & options)
 
   // Get paramters from yaml file
   this->declare_parameter<vector<string>>("pointcloud_topic_name", vector<string>());
-  this->declare_parameter<int>("heartbeat_confirmation_time_span", 1000);
+  this->declare_parameter<double>("heartbeat_confirmation_time_span", 1.0);
   this->declare_parameter<int>("steps_for_moving_average", 5);
+  this->declare_parameter<double>("delta_time_average_threshold", 1.0);
 
   this->get_parameter("pointcloud_topic_name", pointcloud_candidates_);
   this->get_parameter("heartbeat_confirmation_time_span", heartbeat_confimation_time_span);
   this->get_parameter("steps_for_moving_average", steps_for_moving_average);
+  this->get_parameter("delta_time_average_threshold", delta_time_average_threshold_);
 
   // Check pointcloud_topic_names and create subscribers for each topic
   int i = 0;
@@ -57,7 +59,7 @@ PointCloudSwitcher::PointCloudSwitcher(const rclcpp::NodeOptions & options)
 
   // Create a timer to check heartbeat
   timer_ = this->create_wall_timer(
-    std::chrono::milliseconds(heartbeat_confimation_time_span),
+    std::chrono::duration<double>(heartbeat_confimation_time_span),
     std::bind(&PointCloudSwitcher::check_heartbeat, this)
   );
 
@@ -92,7 +94,6 @@ void PointCloudSwitcher::pointcloud_callback(const sensor_msgs::msg::PointCloud2
 void PointCloudSwitcher::check_heartbeat()
 {
   rclcpp::Time current_time = this->now();
-  double timer_span = static_cast<double>(heartbeat_confimation_time_span)/1000.0; // in [s]
 
   // Watch delta time average
   for(const auto &topic_name : pointcloud_candidates_)
@@ -103,9 +104,9 @@ void PointCloudSwitcher::check_heartbeat()
       continue;
     } else {
       // If delta time is greater than 1.0, print warning and update delta_times_ by adding 1.0 to the last element
-      if ((current_time - last_received_time_[topic_name]).seconds() > timer_span) {
+      if ((current_time - last_received_time_[topic_name]).seconds() > heartbeat_confimation_time_span) {
         // Add timer span to the last element of delta_times_ 
-        delta_times_[topic_name].back() += timer_span;
+        delta_times_[topic_name].back() += heartbeat_confimation_time_span;
         RCLCPP_WARN(this->get_logger(), "No pointcloud received from %s in %lf seconds", topic_name.c_str(), delta_times_[topic_name].back());
       }
       // Calculate delta time average
@@ -121,7 +122,7 @@ void PointCloudSwitcher::check_heartbeat()
 
   // If the selected_pointcloud has not received pointcloud yet, skip the following process
   if (delta_times_[selected_pointcloud_topic_name_].size() == 0) {
-    // TODO(Taiki Yamada): Check the time difference between current time and last_received_time_[selected_pointcloud_topic_name_]
+    // TODO(Taiki Yamada): Check the time difference between current time and last_received_time_[selected_pointcloud_topic_name_] to detect too much time delay for initialization
     return;
   }
 
@@ -142,8 +143,18 @@ void PointCloudSwitcher::check_heartbeat()
     if (next_pointcloud_topic_name_.empty()) {
       RCLCPP_WARN(this->get_logger(), "No available pointcloud topic!!");
     } else {
-      RCLCPP_WARN(this->get_logger(), "Switching pointcloud from %s to %s", selected_pointcloud_topic_name_.c_str(), next_pointcloud_topic_name_.c_str());
+      RCLCPP_WARN(this->get_logger(), "Switching pointcloud from %s to %s. [Priority down].", selected_pointcloud_topic_name_.c_str(), next_pointcloud_topic_name_.c_str());
       selected_pointcloud_topic_name_ = next_pointcloud_topic_name_;
+    }
+  }
+
+  // If there is a pointcloud that has a higher priority than the selected_pointcloud and its delta time is lower than the threshold, switch to that pointcloud
+  for(const auto &topic_name : pointcloud_candidates_)
+  {
+    if(pointcloud_priority_[topic_name] < pointcloud_priority_[selected_pointcloud_topic_name_] && delta_time_average_[topic_name] <= 1.0)
+    {
+      RCLCPP_WARN(this->get_logger(), "Switching pointcloud from %s to %s [Priority up].", selected_pointcloud_topic_name_.c_str(), topic_name.c_str());
+      selected_pointcloud_topic_name_ = topic_name;
     }
   }
 }
