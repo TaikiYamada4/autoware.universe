@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Parameters for pointcloud_switcher",
+  "type": "object",
+  "definitions": {
+    "pointcloud_switcher": {
+      "type": "object",
+      "properties": {
+        "pointcloud_topic_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Topic names of pointcloud candidates"
+        },
+        "subscription_period_confirmation_time_span": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "Timer callback period in seconds. The period to check the average subscription period for each pointcloud topic."
+        },
+        "steps_for_moving_average": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 5,
+          "description": "Window length of the moving average to calculate the subscription period."
+        },
+        "average_subscription_period_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "Pointcloud topics with subscription period larger than this threshold will be switched to an alternative."
+        }
+      },
+      "required": [
+        "pointcloud_topic_names",
+        "subscription_period_confirmation_time_span",
+        "steps_for_moving_average",
+        "average_subscription_period_threshold"
+      ]
+    }
+  },
+  "properties": {
+    "/**": {
+      "type": "object",
+      "properties": {
+        "ros__parameters": {
+          "$ref": "#/definitions/pointcloud_switcher"
+        }
+      },
+      "required": ["ros__parameters"]
+    }
+  },
+  "required": ["/**"]
+}

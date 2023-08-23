@@ -50,7 +50,7 @@ namespace pointcloud_preprocessor
       map<string, double> delta_time_average_; // map of topic_name and delta time average
       map<string, bool> pending_delta_flag_; // flag for pending delta time
       size_t steps_for_moving_average; // Number of delta time to be stored
-      double heartbeat_confimation_time_span; // in [s]
+      double subscription_period_confimation_time_span; // in [s]
       double delta_time_average_threshold_; // in [s]
       
       rclcpp::TimerBase::SharedPtr timer_;

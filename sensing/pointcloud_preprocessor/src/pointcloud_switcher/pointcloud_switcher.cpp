@@ -21,15 +21,15 @@ namespace pointcloud_preprocessor
   : rclcpp::Node("pointcloud_switcher", options)
   {
     // Get paramters from yaml file
-    this->declare_parameter<vector<string>>("pointcloud_topic_name", vector<string>());
-    this->declare_parameter<double>("heartbeat_confirmation_time_span", 1.0);
+    this->declare_parameter<vector<string>>("pointcloud_topic_names", vector<string>());
+    this->declare_parameter<double>("subscription_period_confirmation_time_span", 1.0);
     this->declare_parameter<int>("steps_for_moving_average", 5);
-    this->declare_parameter<double>("delta_time_average_threshold", 1.0);
+    this->declare_parameter<double>("average_subscription_period_threshold", 1.0);
 
-    this->get_parameter("pointcloud_topic_name", pointcloud_candidates_);
-    this->get_parameter("heartbeat_confirmation_time_span", heartbeat_confimation_time_span);
+    this->get_parameter("pointcloud_topic_names", pointcloud_candidates_);
+    this->get_parameter("subscription_period_confirmation_time_span", subscription_period_confimation_time_span);
     this->get_parameter("steps_for_moving_average", steps_for_moving_average);
-    this->get_parameter("delta_time_average_threshold", delta_time_average_threshold_);
+    this->get_parameter("average_subscription_period_threshold", delta_time_average_threshold_);
 
     // Check pointcloud_topic_names and create subscribers for each topic
     int i = 0;
@@ -57,7 +57,7 @@ namespace pointcloud_preprocessor
 
     // Create a timer to check heartbeat
     timer_ = this->create_wall_timer(
-      std::chrono::duration<double>(heartbeat_confimation_time_span),
+      std::chrono::duration<double>(subscription_period_confimation_time_span),
       std::bind(&PointCloudSwitcher::check_heartbeat, this)
     );
 
@@ -79,7 +79,7 @@ namespace pointcloud_preprocessor
     last_initialization_state_.state = autoware_adapi_v1_msgs::msg::LocalizationInitializationState::UNKNOWN;
 
     // Estimate the time how long will it take to switch to the next pointcloud when the selected pointcloud is down
-    RCLCPP_DEBUG(this->get_logger(), "It might take %lf seconds to judge whether the selected pointcloud is down.", ceil(steps_for_moving_average * delta_time_average_threshold_ / heartbeat_confimation_time_span) * heartbeat_confimation_time_span);
+    RCLCPP_DEBUG(this->get_logger(), "It might take %lf seconds to judge whether the selected pointcloud is down.", ceil(steps_for_moving_average * delta_time_average_threshold_ / subscription_period_confimation_time_span) * subscription_period_confimation_time_span);
   }
 
   void PointCloudSwitcher::pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg, const string topic_name)
@@ -139,7 +139,7 @@ namespace pointcloud_preprocessor
         continue;
       } else {
         // If delta time is greater than heartbeat_confirmation_time_span, print warning and update delta_times_ by adding it to the last element
-        if ((current_time - last_received_time_[topic_name]).seconds() > heartbeat_confimation_time_span) {
+        if ((current_time - last_received_time_[topic_name]).seconds() > subscription_period_confimation_time_span) {
           // If pending_delta_flag_ is false, push_back a new delta time, if not, edit the last element
           // pending_delta_flag_ is used to avoid pushing back a new delta time when "the last element is edited" (= "a new pointcloud topic is still not subscribed")
           if (pending_delta_flag_[topic_name] == false) {
@@ -147,10 +147,10 @@ namespace pointcloud_preprocessor
             if (delta_times_[topic_name].size() >= steps_for_moving_average) {
               delta_times_[topic_name].erase(delta_times_[topic_name].begin());
             }
-            delta_times_[topic_name].push_back(heartbeat_confimation_time_span);
+            delta_times_[topic_name].push_back(subscription_period_confimation_time_span);
             pending_delta_flag_[topic_name] = true;
           } else {
-            delta_times_[topic_name].back() += heartbeat_confimation_time_span;
+            delta_times_[topic_name].back() += subscription_period_confimation_time_span;
           }
 
           if ((current_time - last_received_time_[topic_name]).seconds() > delta_time_average_threshold_) {
