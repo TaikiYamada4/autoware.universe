@@ -35,7 +35,7 @@ namespace pointcloud_preprocessor
       void pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg, const string topic_name);
       void initialization_state_callback(const autoware_adapi_v1_msgs::msg::LocalizationInitializationState::SharedPtr msg);
       void check_heartbeat();
-      string next_pointcloud_topic(); 
+      string next_pointcloud_topic(); //(const string current_pointcloud_topic_name);
       
       vector<string> pointcloud_candidates_;
       map<string, int> pointcloud_priority_;

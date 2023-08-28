@@ -1,0 +1,6 @@
+/**:
+  ros__parameters:
+    pointcloud_topic_name:
+      - "/sensing/lidar/concatenated/pointcloud"
+      - "/sensing/lidar/left_upper/outlier_filtered/pointcloud"
+      - "/sensing/lidar/right_upper/outlier_filtered/pointcloud"
