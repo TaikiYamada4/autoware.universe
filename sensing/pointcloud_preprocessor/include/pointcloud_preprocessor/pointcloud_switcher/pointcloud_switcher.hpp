@@ -16,6 +16,7 @@
 #define POINTCLOUD_PREPROCESSOR__POINTCLOUD_SWITCHER__POINTCLOUD_SWITCHER_HPP_
 
 #include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <autoware_adapi_v1_msgs/msg/localization_initialization_state.hpp>
 
@@ -34,7 +35,7 @@ namespace pointcloud_preprocessor
     private:
       void pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg, const string topic_name);
       void initialization_state_callback(const autoware_adapi_v1_msgs::msg::LocalizationInitializationState::SharedPtr msg);
-      void check_heartbeat();
+      void check_subscription_period();
       string next_pointcloud_topic(); //(const string current_pointcloud_topic_name);
       
       vector<string> pointcloud_candidates_;
@@ -42,6 +43,7 @@ namespace pointcloud_preprocessor
       string selected_pointcloud_topic_name_;
       vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> pointcloud_subscribers_;
       rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr selected_pointcloud_publisher_;
+      rclcpp::Publisher<std_msgs::msg::String>::SharedPtr debug_info_publisher_;
       rclcpp::Subscription<autoware_adapi_v1_msgs::msg::LocalizationInitializationState>::SharedPtr initialization_state_subscriber_;
       autoware_adapi_v1_msgs::msg::LocalizationInitializationState last_initialization_state_;
 

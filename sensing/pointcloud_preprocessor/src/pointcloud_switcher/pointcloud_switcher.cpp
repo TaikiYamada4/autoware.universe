@@ -55,10 +55,10 @@ namespace pointcloud_preprocessor
       pending_delta_flag_[topic_name] = false;
     }
 
-    // Create a timer to check heartbeat
+    // Create a timer to check subscription_period
     timer_ = this->create_wall_timer(
       std::chrono::duration<double>(subscription_period_confimation_time_span),
-      std::bind(&PointCloudSwitcher::check_heartbeat, this)
+      std::bind(&PointCloudSwitcher::check_subscription_period, this)
     );
 
     // Set selected_pointcloud_topic_name_ to the first element of pointcloud_candidates_
@@ -66,6 +66,9 @@ namespace pointcloud_preprocessor
 
     // Create publisher of /selected/pointcloud
     selected_pointcloud_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("output/pointcloud", 10);
+
+    // Create publisher of pointcloud_switcher/debug_info
+    debug_info_publisher_ = this->create_publisher<std_msgs::msg::String>("pointcloud_switcher/debug/info", 10);
 
     // Create subscriber of /api/localization/initialization_state
     rclcpp::QoS qos_initialization_state(1);
@@ -119,14 +122,19 @@ namespace pointcloud_preprocessor
       if (next_pointcloud_topic_name_.empty()) {
         RCLCPP_ERROR(this->get_logger(), "No available pointcloud topic!!");
       } else {
-        if(next_pointcloud_topic_name_ != selected_pointcloud_topic_name_) RCLCPP_WARN(this->get_logger(), "Switching pointcloud from %s to %s.", selected_pointcloud_topic_name_.c_str(), next_pointcloud_topic_name_.c_str());
+        if(next_pointcloud_topic_name_ != selected_pointcloud_topic_name_) {
+          RCLCPP_WARN(this->get_logger(), "Switching pointcloud from %s to %s.", selected_pointcloud_topic_name_.c_str(), next_pointcloud_topic_name_.c_str());
+          auto message = std_msgs::msg::String();
+          message.data = selected_pointcloud_topic_name_ + next_pointcloud_topic_name_;
+          debug_info_publisher_->publish(message);
+        }
         selected_pointcloud_topic_name_ = next_pointcloud_topic_name_;
       }
     }
     last_initialization_state_ = *msg;
   }
 
-  void PointCloudSwitcher::check_heartbeat() // Timer callback
+  void PointCloudSwitcher::check_subscription_period() // Timer callback
   {
     rclcpp::Time current_time = this->now();
 
@@ -138,7 +146,7 @@ namespace pointcloud_preprocessor
         RCLCPP_WARN(this->get_logger(), "Haven't received pointcloud from %s yet", topic_name.c_str());
         continue;
       } else {
-        // If delta time is greater than heartbeat_confirmation_time_span, print warning and update delta_times_ by adding it to the last element
+        // If delta time is greater than subscription_period_confirmation_time_span, print warning and update delta_times_ by adding it to the last element
         if ((current_time - last_received_time_[topic_name]).seconds() > subscription_period_confimation_time_span) {
           // If pending_delta_flag_ is false, push_back a new delta time, if not, edit the last element
           // pending_delta_flag_ is used to avoid pushing back a new delta time when "the last element is edited" (= "a new pointcloud topic is still not subscribed")
@@ -175,8 +183,13 @@ namespace pointcloud_preprocessor
     if (next_pointcloud_topic_name_.empty()) {
       RCLCPP_ERROR(this->get_logger(), "No available pointcloud topic!!");
     } else {
-      if(next_pointcloud_topic_name_ != selected_pointcloud_topic_name_) RCLCPP_WARN(this->get_logger(), "Switching pointcloud from %s to %s.", selected_pointcloud_topic_name_.c_str(), next_pointcloud_topic_name_.c_str());
-      selected_pointcloud_topic_name_ = next_pointcloud_topic_name_;
+        if(next_pointcloud_topic_name_ != selected_pointcloud_topic_name_) {
+          RCLCPP_WARN(this->get_logger(), "Switching pointcloud from %s to %s.", selected_pointcloud_topic_name_.c_str(), next_pointcloud_topic_name_.c_str());
+          auto message = std_msgs::msg::String();
+          message.data = selected_pointcloud_topic_name_ + "," + next_pointcloud_topic_name_;
+          debug_info_publisher_->publish(message);
+        }
+        selected_pointcloud_topic_name_ = next_pointcloud_topic_name_;
     }
   }
 

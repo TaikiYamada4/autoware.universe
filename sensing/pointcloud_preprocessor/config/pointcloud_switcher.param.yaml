@@ -1,0 +1,10 @@
+/**:
+  ros__parameters:
+    pointcloud_topic_names:
+      - "/sensing/lidar/front_lower/outlier_filtered/pointcloud"
+      - "/sensing/lidar/left_upper/outlier_filtered/pointcloud"
+      - "/sensing/lidar/right_upper/outlier_filtered/pointcloud"
+      - "/sensing/lidar/concatenated/pointcloud"
+    subscription_period_confirmation_time_span: 1.0 # in seconds
+    steps_for_moving_average: 4
+    average_subscription_period_threshold: 0.5 # in seconds
