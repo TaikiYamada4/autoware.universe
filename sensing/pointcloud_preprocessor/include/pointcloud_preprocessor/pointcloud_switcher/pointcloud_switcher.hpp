@@ -18,7 +18,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <autoware_adapi_v1_msgs/msg/localization_initialization_state.hpp>
+//#include <autoware_adapi_v1_msgs/msg/localization_initialization_state.hpp>
 
 #include <string>
 #include <vector>
@@ -34,7 +34,7 @@ namespace pointcloud_preprocessor
 
     private:
       void pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg, const string topic_name);
-      void initialization_state_callback(const autoware_adapi_v1_msgs::msg::LocalizationInitializationState::SharedPtr msg);
+      //void initialization_state_callback(const autoware_adapi_v1_msgs::msg::LocalizationInitializationState::SharedPtr msg);
       void check_subscription_period();
       string next_pointcloud_topic(); //(const string current_pointcloud_topic_name);
       
@@ -44,8 +44,8 @@ namespace pointcloud_preprocessor
       vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> pointcloud_subscribers_;
       rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr selected_pointcloud_publisher_;
       rclcpp::Publisher<std_msgs::msg::String>::SharedPtr debug_info_publisher_;
-      rclcpp::Subscription<autoware_adapi_v1_msgs::msg::LocalizationInitializationState>::SharedPtr initialization_state_subscriber_;
-      autoware_adapi_v1_msgs::msg::LocalizationInitializationState last_initialization_state_;
+      //rclcpp::Subscription<autoware_adapi_v1_msgs::msg::LocalizationInitializationState>::SharedPtr initialization_state_subscriber_;
+      //autoware_adapi_v1_msgs::msg::LocalizationInitializationState last_initialization_state_;
 
       map<string, rclcpp::Time> last_received_time_; // map of topic_name and last received time
       map<string, vector<double>> delta_times_; // map of topic_name and a vector of delta times

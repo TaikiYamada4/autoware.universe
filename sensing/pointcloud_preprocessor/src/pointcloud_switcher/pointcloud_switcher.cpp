@@ -70,6 +70,7 @@ namespace pointcloud_preprocessor
     // Create publisher of pointcloud_switcher/debug_info
     debug_info_publisher_ = this->create_publisher<std_msgs::msg::String>("pointcloud_switcher/debug/info", 10);
 
+    /*
     // Create subscriber of /api/localization/initialization_state
     rclcpp::QoS qos_initialization_state(1);
     qos_initialization_state.reliability(rclcpp::ReliabilityPolicy::Reliable);
@@ -83,7 +84,9 @@ namespace pointcloud_preprocessor
 
     // Estimate the time how long will it take to switch to the next pointcloud when the selected pointcloud is down
     RCLCPP_DEBUG(this->get_logger(), "It might take %lf seconds to judge whether the selected pointcloud is down.", ceil(steps_for_moving_average * delta_time_average_threshold_ / subscription_period_confimation_time_span) * subscription_period_confimation_time_span);
+    */
   }
+  
 
   void PointCloudSwitcher::pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg, const string topic_name)
   {
@@ -112,6 +115,7 @@ namespace pointcloud_preprocessor
     }
   }
 
+  /*
   void PointCloudSwitcher::initialization_state_callback(const autoware_adapi_v1_msgs::msg::LocalizationInitializationState::SharedPtr msg)
   {
     // If the state is changed from INITIALIZING to UNINITIALIZED, which means initialization failure, switch to the available pointcloud.
@@ -125,7 +129,9 @@ namespace pointcloud_preprocessor
         if(next_pointcloud_topic_name_ != selected_pointcloud_topic_name_) {
           RCLCPP_WARN(this->get_logger(), "Switching pointcloud from %s to %s.", selected_pointcloud_topic_name_.c_str(), next_pointcloud_topic_name_.c_str());
           auto message = std_msgs::msg::String();
-          message.data = selected_pointcloud_topic_name_ + next_pointcloud_topic_name_;
+          rclcpp::Time current_time = this->now();
+          std::string time_str = std::to_string(current_time.seconds());
+          message.data = time_str + "," + selected_pointcloud_topic_name_ + "," + next_pointcloud_topic_name_;
           debug_info_publisher_->publish(message);
         }
         selected_pointcloud_topic_name_ = next_pointcloud_topic_name_;
@@ -133,6 +139,7 @@ namespace pointcloud_preprocessor
     }
     last_initialization_state_ = *msg;
   }
+  */
 
   void PointCloudSwitcher::check_subscription_period() // Timer callback
   {
@@ -186,7 +193,9 @@ namespace pointcloud_preprocessor
         if(next_pointcloud_topic_name_ != selected_pointcloud_topic_name_) {
           RCLCPP_WARN(this->get_logger(), "Switching pointcloud from %s to %s.", selected_pointcloud_topic_name_.c_str(), next_pointcloud_topic_name_.c_str());
           auto message = std_msgs::msg::String();
-          message.data = selected_pointcloud_topic_name_ + "," + next_pointcloud_topic_name_;
+          rclcpp::Time current_time = this->now();
+          std::string time_str = std::to_string(current_time.seconds());
+          message.data = time_str + "," + selected_pointcloud_topic_name_ + "," + next_pointcloud_topic_name_;
           debug_info_publisher_->publish(message);
         }
         selected_pointcloud_topic_name_ = next_pointcloud_topic_name_;

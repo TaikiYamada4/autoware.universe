@@ -31,7 +31,7 @@ def launch_setup(context, *args, **kwargs):
         
     enable_pointcloud_switch = LaunchConfiguration('enable_pointcloud_switch').perform(context)
     
-    crop_box_input = "selected/pointcloud" if enable_pointcloud_switch == 'true' else LaunchConfiguration("input/pointcloud") 
+    crop_box_input = "selected/pointcloud" if enable_pointcloud_switch == 'true' else LaunchConfiguration("input_pointcloud") 
 
     pointcloud_switcher_component = ComposableNode(
         package="pointcloud_preprocessor",
