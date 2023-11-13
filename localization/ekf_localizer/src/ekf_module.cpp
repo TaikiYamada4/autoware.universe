@@ -148,7 +148,7 @@ void EKFModule::predictWithDelay(const double dt)
 
 bool EKFModule::measurementUpdatePose(
   const PoseWithCovariance & pose, const double dt, const rclcpp::Time & t_curr,
-  EKFDiagnosticInfo & pose_diag_info)
+  EKFDiagnosticInfo & pose_diag_info, Pose & y_ekf_pose)
 {
   if (pose.header.frame_id != params_.pose_frame_id) {
     warning_->warnThrottle(
@@ -227,6 +227,12 @@ bool EKFModule::measurementUpdatePose(
   const Eigen::MatrixXd X_result = kalman_filter_.getLatestX();
   DEBUG_PRINT_MAT(X_result.transpose());
   DEBUG_PRINT_MAT((X_result - X_curr).transpose());
+
+  // Pass y_ekf_ in pose format
+  y_ekf_pose.pose.position.x = y_ekf(0);
+  y_ekf_pose.pose.position.y = y_ekf(1);
+  y_ekf_pose.pose.position.z = 0.0;
+  y_ekf_pose.pose.orientation = tier4_autoware_utils::createQuaternionFromRPY(0.0, 0.0, y_ekf(2));
 
   return true;
 }

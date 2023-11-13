@@ -125,6 +125,10 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pub_biased_pose_cov_;
   //!< @brief diagnostics publisher
   rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr pub_diag_;
+
+  //!< @brief y_ekf pose publisher
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pub_y_ekf_pose_;
+
   //!< @brief initial pose subscriber
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sub_initialpose_;
   //!< @brief measurement pose with covariance subscriber
@@ -165,6 +169,7 @@ private:
 
   //!< @brief accumulated time for timer callback
   rclcpp::Duration accumulated_time_;
+  double ekf_dt_;
 
   /**
    * @brief computes update & prediction of EKF for each ekf_dt_[s] time

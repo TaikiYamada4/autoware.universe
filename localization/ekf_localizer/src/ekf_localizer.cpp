@@ -46,7 +46,8 @@ EKFLocalizer::EKFLocalizer(const std::string & node_name, const rclcpp::NodeOpti
   params_(this),
   pose_queue_(params_.pose_smoothing_steps),
   twist_queue_(params_.twist_smoothing_steps),
-  accumulated_time_(0, 0)
+  accumulated_time_(0, 0),
+  ekf_dt_(params_.ekf_dt)
 {
   is_activated_ = false;
 
@@ -71,6 +72,9 @@ EKFLocalizer::EKFLocalizer(const std::string & node_name, const rclcpp::NodeOpti
   pub_biased_pose_cov_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "ekf_biased_pose_with_covariance", 1);
   pub_diag_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", 10);
+
+  pub_y_ekf_pose_ = create_publisher<geometry_msgs::msg::PoseStamped>("y_ekf_pose_", 1);
+
   sub_initialpose_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", 1, std::bind(&EKFLocalizer::callbackInitialPose, this, _1));
   sub_pose_with_cov_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
@@ -108,6 +112,7 @@ void EKFLocalizer::updatePredictFrequency()
       double current_ekf_dt_ = (current_time - last_predict_time_).seconds();
       DEBUG_INFO(get_logger(), "[EKF] update ekf_dt_ to %f seconds", current_ekf_dt_);
     }
+    ekf_dt_ = (current_time - last_predict_time_).seconds();
   } 
   last_predict_time_ = current_time;
 }
@@ -134,9 +139,9 @@ void EKFLocalizer::timerCallback()
   DEBUG_INFO(get_logger(), "------------------------- start prediction -------------------------");
   DEBUG_INFO(get_logger(), "[EKF] accumulated_time = %lf [s] (before prediction)", accumulated_time_.seconds());
   size_t prediction_times = static_cast<int>(accumulated_time_.seconds() / params_.ekf_dt);
-  for (size_t i = 0; i < prediction_times; ++i) {
-    ekf_module_->predictWithDelay(params_.ekf_dt);
-  }
+  //for (size_t i = 0; i < prediction_times; ++i) {
+    ekf_module_->predictWithDelay(ekf_dt_);
+  //}
   accumulated_time_ = accumulated_time_ - rclcpp::Duration::from_seconds(params_.ekf_dt * prediction_times);
   DEBUG_INFO(get_logger(), "[EKF] predictKinematicsModel calc time = %f [ms] (predicted %d times)", stop_watch_.toc(), static_cast<int>(prediction_times));
   DEBUG_INFO(get_logger(), "[EKF] accumulated_time = %lf [s] (after prediction)", accumulated_time_.seconds());
@@ -152,6 +157,8 @@ void EKFLocalizer::timerCallback()
 
   bool pose_is_updated = false;
 
+  geometry_msgs::msg::PoseStamped y_ekf_posestamped;
+
   if (!pose_queue_.empty()) {
     DEBUG_INFO(get_logger(), "------------------------- start Pose -------------------------");
     stop_watch_.tic();
@@ -161,7 +168,7 @@ void EKFLocalizer::timerCallback()
     const size_t n = pose_queue_.size();
     for (size_t i = 0; i < n; ++i) {
       const auto pose = pose_queue_.pop_increment_age();
-      bool is_updated = ekf_module_->measurementUpdatePose(*pose, params_.ekf_dt, t_curr, pose_diag_info_);
+      bool is_updated = ekf_module_->measurementUpdatePose(*pose, ekf_dt_, t_curr, pose_diag_info_, y_ekf_posestamped);
       if (is_updated) {
         pose_is_updated = true;
 
@@ -171,6 +178,8 @@ void EKFLocalizer::timerCallback()
         const auto pose_with_z_delay = ekf_module_->compensatePoseWithZDelay(*pose, delay_time);
         updateSimple1DFilters(pose_with_z_delay, params_.pose_smoothing_steps);
       }
+      y_ekf_posestamped.header.stamp = this->now();
+      pub_y_ekf_pose_->publish(y_ekf_posestamped);
     }
     DEBUG_INFO(get_logger(), "[EKF] measurementUpdatePose calc time = %f [ms]", stop_watch_.toc());
     DEBUG_INFO(get_logger(), "------------------------- end Pose -------------------------\n");
@@ -197,7 +206,7 @@ void EKFLocalizer::timerCallback()
     for (size_t i = 0; i < n; ++i) {
       const auto twist = twist_queue_.pop_increment_age();
       bool is_updated =
-        ekf_module_->measurementUpdateTwist(*twist, params_.ekf_dt, t_curr, twist_diag_info_);
+        ekf_module_->measurementUpdateTwist(*twist, ekf_dt_, t_curr, twist_diag_info_);
       if (is_updated) {
         twist_is_updated = true;
       }
