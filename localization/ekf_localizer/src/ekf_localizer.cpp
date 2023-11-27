@@ -77,6 +77,7 @@ EKFLocalizer::EKFLocalizer(const std::string & node_name, const rclcpp::NodeOpti
   pub_biased_pose_cov_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "ekf_biased_pose_with_covariance", 1);
   pub_diag_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", 10);
+  pub_y_ekf_pose_ = create_publisher<geometry_msgs::msg::PoseStamped>("y_ekf_pose_", 1);
   sub_initialpose_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", 1, std::bind(&EKFLocalizer::callbackInitialPose, this, _1));
   sub_pose_with_cov_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
@@ -164,6 +165,7 @@ void EKFLocalizer::timerCallback()
   pose_diag_info_.mahalanobis_distance = 0.0;
 
   bool pose_is_updated = false;
+  geometry_msgs::msg::PoseStamped y_ekf_posestamped;
 
   if (!pose_queue_.empty()) {
     DEBUG_INFO(get_logger(), "------------------------- start Pose -------------------------");
@@ -174,7 +176,7 @@ void EKFLocalizer::timerCallback()
     const size_t n = pose_queue_.size();
     for (size_t i = 0; i < n; ++i) {
       const auto pose = pose_queue_.pop_increment_age();
-      bool is_updated = ekf_module_->measurementUpdatePose(*pose, t_curr, pose_diag_info_);
+      bool is_updated = ekf_module_->measurementUpdatePose(*pose, t_curr, pose_diag_info_, y_ekf_posestamped);
       if (is_updated) {
         pose_is_updated = true;
 
@@ -184,6 +186,8 @@ void EKFLocalizer::timerCallback()
         const auto pose_with_z_delay = ekf_module_->compensatePoseWithZDelay(*pose, delay_time);
         updateSimple1DFilters(pose_with_z_delay, params_.pose_smoothing_steps);
       }
+      y_ekf_posestamped.header.stamp = this->now();
+      pub_y_ekf_pose_->publish(y_ekf_posestamped);
     }
     DEBUG_INFO(get_logger(), "[EKF] measurementUpdatePose calc time = %f [ms]", stop_watch_.toc());
     DEBUG_INFO(get_logger(), "------------------------- end Pose -------------------------\n");

@@ -82,7 +82,7 @@ public:
   void predictWithDelay(const double dt);
   bool measurementUpdatePose(
     const PoseWithCovariance & pose, const rclcpp::Time & t_curr,
-    EKFDiagnosticInfo & pose_diag_info);
+    EKFDiagnosticInfo & pose_diag_info, Pose & y_ekf_pose);
   bool measurementUpdateTwist(
     const TwistWithCovariance & twist, const rclcpp::Time & t_curr,
     EKFDiagnosticInfo & twist_diag_info);

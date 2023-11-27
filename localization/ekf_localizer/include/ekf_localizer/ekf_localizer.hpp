@@ -136,6 +136,10 @@ private:
   rclcpp::TimerBase::SharedPtr timer_control_;
   //!< @brief last predict time
   std::shared_ptr<const rclcpp::Time> last_predict_time_;
+
+  //!< @brief y_ekf pose publisher
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pub_y_ekf_pose_;
+
   //!< @brief trigger_node service
   rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_trigger_node_;
 
