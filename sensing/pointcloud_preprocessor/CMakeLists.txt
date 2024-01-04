@@ -110,7 +110,7 @@ rclcpp_components_register_node(pointcloud_preprocessor_filter
   PLUGIN "pointcloud_preprocessor::PeriodicalPointCloudConcatenateDataSynchronizerComponent"
   EXECUTABLE periodical_concatenate_data_node)
 
-# ========== Periodical Concatenate and No Sync ==========
+# ========== Concatenate and No Sync ==========
 rclcpp_components_register_node(pointcloud_preprocessor_filter
   PLUGIN "pointcloud_preprocessor::PointCloudConcatenateDataOnlyComponent"
   EXECUTABLE concatenate_data_only_node)

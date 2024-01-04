@@ -375,9 +375,9 @@ PeriodicalPointCloudConcatenateDataSynchronizerComponent::computeTransformToAdju
     }
 
     const double dis = (*twist_ptr_it)->twist.linear.x * dt;
-    yaw += (*twist_ptr_it)->twist.angular.z * dt;
-    x += dis * std::cos(yaw);
-    y += dis * std::sin(yaw);
+    yaw -= (*twist_ptr_it)->twist.angular.z * dt;
+    x -= dis * std::cos(yaw);
+    y -= dis * std::sin(yaw);
     prev_time = (*twist_ptr_it)->header.stamp;
     total_dt += dt;
   }
@@ -385,7 +385,8 @@ PeriodicalPointCloudConcatenateDataSynchronizerComponent::computeTransformToAdju
   Eigen::AngleAxisf rotation_y(0, Eigen::Vector3f::UnitY());
   Eigen::AngleAxisf rotation_z(yaw, Eigen::Vector3f::UnitZ());
   Eigen::Translation3f translation(x, y, 0);
-  Eigen::Matrix4f rotation_matrix = (translation * rotation_z * rotation_y * rotation_x).matrix();
+  //Eigen::Matrix4f rotation_matrix = (translation * rotation_z * rotation_y * rotation_x).matrix();
+  Eigen::Matrix4f rotation_matrix = (rotation_x * rotation_y * rotation_z * translation).matrix();
   RCLCPP_INFO(
     get_logger(), "    total_dt: %lf, x: %lf, y: %lf, yaw: %lf", total_dt, x, y, yaw);
   return rotation_matrix;
