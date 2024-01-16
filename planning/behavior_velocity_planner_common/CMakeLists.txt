@@ -5,7 +5,6 @@ find_package(autoware_cmake REQUIRED)
 autoware_package()
 
 find_package(PCL REQUIRED COMPONENTS common)
-include_directories(SYSTEM ${PCL_INCLUDE_DIRS})
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
   src/scene_module_interface.cpp
@@ -17,6 +16,9 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
   src/utilization/util.cpp
   src/utilization/debug.cpp
 )
+
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${PCL_INCLUDE_DIRS})
+ament_export_include_directories(SYSTEM ${PCL_INCLUDE_DIRS})
 
 if(BUILD_TESTING)
   ament_add_ros_isolated_gtest(test_${PROJECT_NAME}

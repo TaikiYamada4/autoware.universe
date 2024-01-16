@@ -6,6 +6,8 @@ add_compile_options(-Wno-unknown-pragmas -fopenmp)
 find_package(autoware_cmake REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(VTK REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common)
 autoware_package()
 
 find_package(OpenMP REQUIRED)
@@ -29,6 +31,9 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
 target_link_libraries(${PROJECT_NAME}
   ${OpenCV_LIBRARIES}
   ${EIGEN3_LIBRARIES}
+  libusb-1.0.a 
+  ${FLANN_LIBRARIES}
+  ${QHULL_LIBRARIES}
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
@@ -120,6 +125,7 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
 
   include_directories(
     include
+    SYSTEM
     ${OpenCV_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
