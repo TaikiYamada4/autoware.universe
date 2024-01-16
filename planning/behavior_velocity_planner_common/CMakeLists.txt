@@ -4,6 +4,9 @@ project(behavior_velocity_planner_common)
 find_package(autoware_cmake REQUIRED)
 autoware_package()
 
+find_package(PCL REQUIRED COMPONENTS common)
+include_directories(SYSTEM ${PCL_INCLUDE_DIRS})
+
 ament_auto_add_library(${PROJECT_NAME} SHARED
   src/scene_module_interface.cpp
   src/velocity_factor_interface.cpp
