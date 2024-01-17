@@ -26,6 +26,9 @@ VehicleVelocityConverter::VehicleVelocityConverter() : Node("vehicle_velocity_co
     "velocity_status", rclcpp::QoS{100},
     std::bind(&VehicleVelocityConverter::callbackVelocityReport, this, std::placeholders::_1));
 
+  auto_control_cmd_sub_ = create_subscription<autoware_auto_control_msgs::msg::AckermannControlCommand>(
+    "input/auto/control_cmd", 1, std::bind(&VehicleVelocityConverter::callbackControlCommand, this, std::placeholders::_1));
+
   twist_with_covariance_pub_ = create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>(
     "twist_with_covariance", rclcpp::QoS{10});
 }
@@ -36,6 +39,8 @@ void VehicleVelocityConverter::callbackVelocityReport(
   if (msg->header.frame_id != frame_id_) {
     RCLCPP_WARN(get_logger(), "frame_id is not base_link.");
   }
+
+  update1DKalmanFilter();
 
   // set twist with covariance msg from vehicle report msg
   geometry_msgs::msg::TwistWithCovarianceStamped twist_with_covariance_msg;
@@ -51,4 +56,15 @@ void VehicleVelocityConverter::callbackVelocityReport(
   twist_with_covariance_msg.twist.covariance[5 + 5 * 6] = stddev_wz_ * stddev_wz_;
 
   twist_with_covariance_pub_->publish(twist_with_covariance_msg);
+}
+
+void VehicleVelocityConverter::callbackControlCommand(
+  const autoware_auto_control_msgs::msg::AckermannControlCommand::SharedPtr msg)
+{
+  accel_map_[msg->longitudinal.stamp] = msg->longitudinal.acceleration;
+}
+
+void VehicleVelocityConverter::update1DKalmanFilter()
+{
+  
 }

@@ -18,6 +18,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "autoware_auto_vehicle_msgs/msg/velocity_report.hpp"
+#include "autoware_auto_control_msgs/msg/ackermann_control_command.hpp"
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
 
@@ -33,6 +34,8 @@ public:
 
 private:
   void callbackVelocityReport(const autoware_auto_vehicle_msgs::msg::VelocityReport::SharedPtr msg);
+  void callbackControlCommand(const autoware_auto_control_msgs::msg::AckermannControlCommand::SharedPtr msg);
+  void update1DKalmanFilter();
 
   rclcpp::Subscription<autoware_auto_vehicle_msgs::msg::VelocityReport>::SharedPtr
     vehicle_report_sub_;
@@ -40,11 +43,16 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr
     twist_with_covariance_pub_;
 
+  rclcpp::Subscription<autoware_auto_control_msgs::msg::AckermannControlCommand>::SharedPtr
+    auto_control_cmd_sub_;
+
   std::string frame_id_;
   double stddev_vx_;
   double stddev_wz_;
   double speed_scale_factor_;
   std::array<double, 36> twist_covariance_;
+
+  std::map<rclcpp::Time, double> accel_map_;
 };
 
 #endif  // VEHICLE_VELOCITY_CONVERTER__VEHICLE_VELOCITY_CONVERTER_HPP_
