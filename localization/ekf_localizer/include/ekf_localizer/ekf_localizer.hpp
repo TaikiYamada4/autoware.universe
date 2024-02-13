@@ -32,6 +32,7 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
+#include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <std_srvs/srv/set_bool.hpp>
 #include <tier4_debug_msgs/msg/float64_multi_array_stamped.hpp>
@@ -125,6 +126,10 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pub_biased_pose_cov_;
   //!< @brief diagnostics publisher
   rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr pub_diag_;
+  //!< @brief innovation vector publisher
+  rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr pub_innovation_;
+  //!< @brief mahalanobis distance publisher
+  rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr pub_mahalanobis_;
   //!< @brief initial pose subscriber
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sub_initialpose_;
   //!< @brief measurement pose with covariance subscriber
@@ -220,6 +225,15 @@ private:
    * @brief publish diagnostics message
    */
   void publishDiagnostics(const rclcpp::Time & current_time);
+
+  /**
+ * @brief publish debug info
+ */
+  void publishDebugInfo(
+    const geometry_msgs::msg::Vector3Stamped & innovation,
+    const geometry_msgs::msg::Vector3Stamped & mahalanobis
+  );
+
 
   /**
    * @brief update simple1DFilter

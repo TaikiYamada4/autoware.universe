@@ -78,6 +78,8 @@ EKFLocalizer::EKFLocalizer(const std::string & node_name, const rclcpp::NodeOpti
   pub_biased_pose_cov_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "ekf_biased_pose_with_covariance", 1);
   pub_diag_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", 10);
+  pub_innovation_ = create_publisher<geometry_msgs::msg::Vector3Stamped>("debug/innovation", 1);
+  pub_mahalanobis_ = create_publisher<geometry_msgs::msg::Vector3Stamped>("debug/mahalanobis", 1);
   sub_initialpose_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", 1, std::bind(&EKFLocalizer::callbackInitialPose, this, _1));
   sub_pose_with_cov_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
@@ -172,6 +174,9 @@ void EKFLocalizer::timerCallback()
 
   bool pose_is_updated = false;
 
+  auto innovation_msg = std::make_shared<geometry_msgs::msg::Vector3Stamped>();
+  auto mahalanobis_msg = std::make_shared<geometry_msgs::msg::Vector3Stamped>();
+
   if (!pose_queue_.empty()) {
     DEBUG_INFO(get_logger(), "------------------------- start Pose -------------------------");
     stop_watch_.tic();
@@ -181,7 +186,7 @@ void EKFLocalizer::timerCallback()
     const size_t n = pose_queue_.size();
     for (size_t i = 0; i < n; ++i) {
       const auto pose = pose_queue_.pop_increment_age();
-      bool is_updated = ekf_module_->measurementUpdatePose(*pose, t_curr, pose_diag_info_);
+      bool is_updated = ekf_module_->measurementUpdatePose(*pose, t_curr, pose_diag_info_, innovation_msg.get(), mahalanobis_msg.get());
       if (is_updated) {
         pose_is_updated = true;
 
@@ -239,6 +244,7 @@ void EKFLocalizer::timerCallback()
   /* publish ekf result */
   publishEstimateResult(current_ekf_pose, current_biased_ekf_pose, current_ekf_twist);
   publishDiagnostics(current_time);
+  publishDebugInfo(*innovation_msg, *mahalanobis_msg);
 }
 
 /*
@@ -426,6 +432,14 @@ void EKFLocalizer::publishDiagnostics(const rclcpp::Time & current_time)
   diag_msg.header.stamp = current_time;
   diag_msg.status.push_back(diag_merged_status);
   pub_diag_->publish(diag_msg);
+}
+
+void EKFLocalizer::publishDebugInfo(
+  const geometry_msgs::msg::Vector3Stamped & innovation,
+  const geometry_msgs::msg::Vector3Stamped & mahalanobis)
+{
+  pub_innovation_->publish(innovation);
+  pub_mahalanobis_->publish(mahalanobis);
 }
 
 void EKFLocalizer::updateSimple1DFilters(

@@ -28,9 +28,12 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
+#include <geometry_msgs/msg/vector3_stamped.hpp>
 
 #include <memory>
 #include <vector>
+
+#include <boost/math/distributions/chi_squared.hpp>
 
 struct EKFDiagnosticInfo
 {
@@ -82,8 +85,12 @@ public:
 
   void predictWithDelay(const double dt);
   bool measurementUpdatePose(
-    const PoseWithCovariance & pose, const rclcpp::Time & t_curr,
-    EKFDiagnosticInfo & pose_diag_info);
+    const PoseWithCovariance & pose, 
+    const rclcpp::Time & t_curr,
+    EKFDiagnosticInfo & pose_diag_info,
+    geometry_msgs::msg::Vector3Stamped *innovation_msg,
+    geometry_msgs::msg::Vector3Stamped *mahalanobis_msg
+  );
   bool measurementUpdateTwist(
     const TwistWithCovariance & twist, const rclcpp::Time & t_curr,
     EKFDiagnosticInfo & twist_diag_info);

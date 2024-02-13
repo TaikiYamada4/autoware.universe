@@ -196,7 +196,8 @@ void EKFModule::predictWithDelay(const double dt)
 }
 
 bool EKFModule::measurementUpdatePose(
-  const PoseWithCovariance & pose, const rclcpp::Time & t_curr, EKFDiagnosticInfo & pose_diag_info)
+  const PoseWithCovariance & pose, const rclcpp::Time & t_curr, EKFDiagnosticInfo & pose_diag_info,
+  geometry_msgs::msg::Vector3Stamped *innovation_msg, geometry_msgs::msg::Vector3Stamped *mahalanobis_msg)
 {
   if (pose.header.frame_id != params_.pose_frame_id) {
     warning_->warnThrottle(
@@ -219,6 +220,9 @@ bool EKFModule::measurementUpdatePose(
   delay_time = std::max(delay_time, 0.0);
 
   const int delay_step = static_cast<int>(find_closest_delay_time_index(delay_time));
+
+  innovation_msg->header = pose.header;
+  mahalanobis_msg->header = pose.header;
 
   pose_diag_info.delay_time = std::max(delay_time, pose_diag_info.delay_time);
   pose_diag_info.delay_time_threshold = accumulated_delay_times_.back();
@@ -257,6 +261,16 @@ bool EKFModule::measurementUpdatePose(
 
   const double distance = mahalanobis(y_ekf, y, P_y);
   pose_diag_info.mahalanobis_distance = std::max(distance, pose_diag_info.mahalanobis_distance);
+
+  innovation_msg->vector.x = y(0,0) - y_ekf(0);
+  innovation_msg->vector.y = y(1,0) - y_ekf(1);
+  innovation_msg->vector.z = y(2,0) - y_ekf(2);
+
+  boost::math::chi_squared chiSquareDist(dim_y);
+  mahalanobis_msg->vector.x = distance; // Actual Mahalanobis distance
+  mahalanobis_msg->vector.y = boost::math::quantile(chiSquareDist, 0.95); // 95% confidence of mahalanobis distance
+  mahalanobis_msg->vector.z = 1 - boost::math::cdf(chiSquareDist, distance * distance); // Upper probability of mahalanobis distance
+
   if (distance > params_.pose_gate_dist) {
     pose_diag_info.is_passed_mahalanobis_gate = false;
     warning_->warnThrottle(mahalanobisWarningMessage(distance, params_.pose_gate_dist), 2000);
