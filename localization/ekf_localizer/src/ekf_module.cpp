@@ -221,8 +221,10 @@ bool EKFModule::measurementUpdatePose(
 
   const int delay_step = static_cast<int>(find_closest_delay_time_index(delay_time));
 
-  innovation_msg->header = pose.header;
-  mahalanobis_msg->header = pose.header;
+  innovation_msg->header.stamp = t_curr;
+  innovation_msg->header.frame_id = "base_link";
+  mahalanobis_msg->header.stamp = t_curr;
+  mahalanobis_msg->header.frame_id = "base_link";
 
   pose_diag_info.delay_time = std::max(delay_time, pose_diag_info.delay_time);
   pose_diag_info.delay_time_threshold = accumulated_delay_times_.back();
